@@ -14,6 +14,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
     protected $response;
     protected $config;
     protected $storages;
+    protected $logger;
 
     // servers
     protected $accessController;
@@ -51,7 +52,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
      *
      * @ingroup oauth2_section_7
      */
-    public function __construct($storage = array(), array $config = array(), array $grantTypes = array(), array $responseTypes = array(), OAuth2_ResponseType_AccessTokenInterface $accessTokenResponseType = null)
+    public function __construct($storage = array(), array $config = array(), array $grantTypes = array(), array $responseTypes = array(), OAuth2_ResponseType_AccessTokenInterface $accessTokenResponseType = null, \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {
         $validStorage = array(
             'access_token' => 'OAuth2_Storage_AccessTokenInterface',
@@ -96,6 +97,9 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
         $this->responseTypes = $responseTypes;
         $this->grantTypes = $grantTypes;
         $this->accessTokenResponseType = $accessTokenResponseType;
+
+        //set the logger
+        $this->logger = $logger;
     }
 
     public function getAccessController()
@@ -343,5 +347,18 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
     public function getResponse()
     {
         return $this->response;
+    }
+
+    protected function log($message, $context = array(), $level = 100)
+    {
+        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
+            return;
+        }
+        switch ($level) {
+            case 100:
+            default:
+            $this->logger->debug($message, $context);
+        }
+
     }
 }
