@@ -10,7 +10,7 @@ class OAuth2_Storage_Pdo implements OAuth2_Storage_AuthorizationCodeInterface,
     private $db;
     private $config;
 
-    public function __construct($connection, $config = array())
+    public function __construct($connection, $config = array(), \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {
         if (!$connection instanceof PDO) {
             if (!is_array($connection)) {
@@ -38,6 +38,12 @@ class OAuth2_Storage_Pdo implements OAuth2_Storage_AuthorizationCodeInterface,
             'code_table' => 'oauth_authorization_codes',
             'user_table' => 'oauth_users',
         ), $config);
+
+        //set the logger
+        $this->logger = $logger;
+        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
+            $this->logger = new \Symfony\Component\HttpKernel\Log\NullLogger();
+        }
     }
 
     /* ClientCredentialsInterface */

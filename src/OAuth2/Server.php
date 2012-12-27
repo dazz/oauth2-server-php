@@ -44,11 +44,15 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
      * @param OAuth2_ResponseType_AccessTokenInterface $accessTokenResponseType
      * Response type to use for access token
      *
+     * @param \Symfony\Component\HttpKernel\Log\LoggerInterface $logger
+     *
      * @return
      * TRUE if everything in required scope is contained in available scope,
      * and FALSE if it isn't.
      *
      * @see http://tools.ietf.org/html/draft-ietf-oauth-v2-20#section-7
+     *
+     * @throws InvalidArgumentException
      *
      * @ingroup oauth2_section_7
      */
@@ -100,6 +104,9 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
 
         //set the logger
         $this->logger = $logger;
+        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
+            $this->logger = new \Symfony\Component\HttpKernel\Log\NullLogger();
+        }
     }
 
     public function getAccessController()
@@ -347,18 +354,5 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
     public function getResponse()
     {
         return $this->response;
-    }
-
-    protected function log($message, $context = array(), $level = 100)
-    {
-        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
-            return;
-        }
-        switch ($level) {
-            case 100:
-            default:
-            $this->logger->debug($message, $context);
-        }
-
     }
 }

@@ -11,7 +11,7 @@ class OAuth2_Controller_AuthorizeController implements OAuth2_Controller_Authori
     private $config;
     private $util;
 
-    public function __construct(OAuth2_Storage_ClientInterface $clientStorage, array $responseTypes = array(), array $config = array(), $util = null)
+    public function __construct(OAuth2_Storage_ClientInterface $clientStorage, array $responseTypes = array(), array $config = array(), $util = null, \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {
         $this->clientStorage = $clientStorage;
         $this->responseTypes = $responseTypes;
@@ -25,6 +25,12 @@ class OAuth2_Controller_AuthorizeController implements OAuth2_Controller_Authori
             $util = new OAuth2_Util();
         }
         $this->util = $util;
+
+        //set the logger
+        $this->logger = $logger;
+        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
+            $this->logger = new \Symfony\Component\HttpKernel\Log\NullLogger();
+        }
     }
 
     public function handleAuthorizeRequest(OAuth2_RequestInterface $request, $is_authorized, $user_id = null)

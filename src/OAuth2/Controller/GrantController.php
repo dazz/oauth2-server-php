@@ -8,7 +8,7 @@ class OAuth2_Controller_GrantController implements OAuth2_Controller_GrantContro
     private $grantTypes;
     private $util;
 
-    public function __construct(OAuth2_Storage_ClientCredentialsInterface $clientStorage, OAuth2_ResponseType_AccessTokenInterface $accessToken, array $grantTypes = array(), $util = null)
+    public function __construct(OAuth2_Storage_ClientCredentialsInterface $clientStorage, OAuth2_ResponseType_AccessTokenInterface $accessToken, array $grantTypes = array(), $util = null, \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {
         $this->clientStorage = $clientStorage;
         $this->accessToken = $accessToken;
@@ -20,6 +20,12 @@ class OAuth2_Controller_GrantController implements OAuth2_Controller_GrantContro
             $util = new OAuth2_Util();
         }
         $this->util = $util;
+
+        //set the logger
+        $this->logger = $logger;
+        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
+            $this->logger = new \Symfony\Component\HttpKernel\Log\NullLogger();
+        }
     }
 
     public function handleGrantRequest(OAuth2_RequestInterface $request)

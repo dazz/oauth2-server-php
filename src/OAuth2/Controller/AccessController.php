@@ -10,7 +10,7 @@ class OAuth2_Controller_AccessController implements OAuth2_Controller_AccessCont
     private $tokenStorage;
     private $config;
 
-    public function __construct(OAuth2_TokenTypeInterface $tokenType, OAuth2_Storage_AccessTokenInterface $tokenStorage, $config = array(), $util = null)
+    public function __construct(OAuth2_TokenTypeInterface $tokenType, OAuth2_Storage_AccessTokenInterface $tokenStorage, $config = array(), $util = null, \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {
         $this->tokenType = $tokenType;
         $this->tokenStorage = $tokenStorage;
@@ -23,6 +23,12 @@ class OAuth2_Controller_AccessController implements OAuth2_Controller_AccessCont
             $util = new OAuth2_Util();
         }
         $this->util = $util;
+
+        //set the logger
+        $this->logger = $logger;
+        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
+            $this->logger = new \Symfony\Component\HttpKernel\Log\NullLogger();
+        }
     }
 
     public function verifyAccessRequest(OAuth2_RequestInterface $request)
