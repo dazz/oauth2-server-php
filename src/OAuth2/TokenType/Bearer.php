@@ -7,6 +7,7 @@ class OAuth2_TokenType_Bearer implements OAuth2_TokenTypeInterface, OAuth2_Respo
 {
     private $response;
     private $config;
+    protected $logger;
 
     public function __construct(array $config = array(), \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {

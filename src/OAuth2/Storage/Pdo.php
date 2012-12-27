@@ -9,6 +9,7 @@ class OAuth2_Storage_Pdo implements OAuth2_Storage_AuthorizationCodeInterface,
 {
     private $db;
     private $config;
+    protected $logger;
 
     public function __construct($connection, $config = array(), \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {

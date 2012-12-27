@@ -10,6 +10,7 @@ class OAuth2_Controller_AuthorizeController implements OAuth2_Controller_Authori
     private $responseTypes;
     private $config;
     private $util;
+    protected $logger;
 
     public function __construct(OAuth2_Storage_ClientInterface $clientStorage, array $responseTypes = array(), array $config = array(), $util = null, \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {

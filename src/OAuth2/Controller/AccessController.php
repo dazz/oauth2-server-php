@@ -9,6 +9,7 @@ class OAuth2_Controller_AccessController implements OAuth2_Controller_AccessCont
     private $tokenType;
     private $tokenStorage;
     private $config;
+    protected $logger;
 
     public function __construct(OAuth2_TokenTypeInterface $tokenType, OAuth2_Storage_AccessTokenInterface $tokenStorage, $config = array(), $util = null, \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {
