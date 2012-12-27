@@ -118,7 +118,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
             $tokenType = null;
             if ($this->config['token_type'] == 'bearer') {
                 $config = array_intersect_key($this->config, array_flip(explode(' ', 'token_param_name token_bearer_header_name')));
-                $tokenType = new OAuth2_TokenType_Bearer($config);
+                $tokenType = new OAuth2_TokenType_Bearer($config, $this->logger);
             } else if ($this->config['token_type'] == 'mac') {
                 $tokenType = new OAuth2_TokenType_MAC();
             } else {
@@ -128,7 +128,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
                 throw new LogicException("You must supply a storage object implementing OAuth2_Storage_AccessTokenInterface to use the access server");
             }
             $config = array_intersect_key($this->config, array('www_realm' => ''));
-            $this->accessController = new OAuth2_Controller_AccessController($tokenType, $this->storages['access_token'], $config);
+            $this->accessController = new OAuth2_Controller_AccessController($tokenType, $this->storages['access_token'], $config, null, $this->logger);
         }
         return $this->accessController;
     }
@@ -143,7 +143,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
                 $this->responseTypes = $this->getDefaultResponseTypes();
             }
             $config = array_intersect_key($this->config, array_flip(explode(' ', 'supported_scopes allow_implicit enforce_state')));
-            $this->authorizeController = new OAuth2_Controller_AuthorizeController($this->storages['client'], $this->responseTypes, $config);
+            $this->authorizeController = new OAuth2_Controller_AuthorizeController($this->storages['client'], $this->responseTypes, $config, null, $this->logger);
         }
         return $this->authorizeController;
     }
@@ -172,7 +172,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
             if (0 == count($this->grantTypes)) {
                 $this->grantTypes = $this->getDefaultGrantTypes();
             }
-            $this->grantController = new OAuth2_Controller_GrantController($this->storages['client_credentials'], $this->accessTokenResponseType, $this->grantTypes);
+            $this->grantController = new OAuth2_Controller_GrantController($this->storages['client_credentials'], $this->accessTokenResponseType, $this->grantTypes, null, $this->logger);
         }
         return $this->grantController;
     }
