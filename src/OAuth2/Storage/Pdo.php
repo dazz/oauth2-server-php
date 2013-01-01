@@ -7,8 +7,8 @@ class OAuth2_Storage_Pdo implements OAuth2_Storage_AuthorizationCodeInterface,
     OAuth2_Storage_AccessTokenInterface, OAuth2_Storage_ClientCredentialsInterface,
     OAuth2_Storage_UserCredentialsInterface, OAuth2_Storage_RefreshTokenInterface
 {
-    private $db;
-    private $config;
+    protected $db;
+    protected $config;
     protected $logger;
 
     public function __construct($connection, $config = array(), \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
