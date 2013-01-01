@@ -84,7 +84,7 @@ class OAuth2_Controller_GrantController implements OAuth2_Controller_GrantContro
         }
 
         if ($this->clientStorage->checkClientCredentials($clientData['client_id'], $clientData['client_secret']) === false) {
-            $this->logger->info('The client credentials are invalid');
+            $this->logger->info('The client credentials are invalid', $clientData);
             $this->response = new OAuth2_Response_Error(400, 'invalid_client', 'The client credentials are invalid');
             return null;
         }
