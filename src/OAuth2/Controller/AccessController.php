@@ -39,7 +39,7 @@ class OAuth2_Controller_AccessController implements OAuth2_Controller_AccessCont
         $this->response = $this->tokenType->getResponse();
         if ($token) {
             $access_token = $this->getAccessTokenData($token, $request->query('scope'));
-            $this->logger->info('Access token could be found in request'. array('found_access_token' => ((bool) $access_token),);
+            $this->logger->info('Access token could be found in request'. array('found_access_token' => ((bool) $access_token),));
             return (bool) $access_token;
         }
         $this->logger->info('Access token could not be found in request');
