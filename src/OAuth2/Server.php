@@ -14,6 +14,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
     protected $response;
     protected $config;
     protected $storages;
+    protected $logger;
 
     // servers
     protected $accessController;
@@ -43,15 +44,19 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
      * @param OAuth2_ResponseType_AccessTokenInterface $accessTokenResponseType
      * Response type to use for access token
      *
+     * @param \Symfony\Component\HttpKernel\Log\LoggerInterface $logger
+     *
      * @return
      * TRUE if everything in required scope is contained in available scope,
      * and FALSE if it isn't.
      *
      * @see http://tools.ietf.org/html/draft-ietf-oauth-v2-20#section-7
      *
+     * @throws InvalidArgumentException
+     *
      * @ingroup oauth2_section_7
      */
-    public function __construct($storage = array(), array $config = array(), array $grantTypes = array(), array $responseTypes = array(), OAuth2_ResponseType_AccessTokenInterface $accessTokenResponseType = null)
+    public function __construct($storage = array(), array $config = array(), array $grantTypes = array(), array $responseTypes = array(), OAuth2_ResponseType_AccessTokenInterface $accessTokenResponseType = null, \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {
         $validStorage = array(
             'access_token' => 'OAuth2_Storage_AccessTokenInterface',
@@ -66,9 +71,9 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
         foreach ($storage as $key => $service) {
             if (isset($validStorage[$key])) {
                 if (!$service instanceof $validStorage[$key]) {
-                    throw new InvalidArgumentException(sprintf('storage of type "%s" must implement interface "%s"', $type, $interface));
+                    throw new InvalidArgumentException(sprintf('storage of type "%s" must implement interface "%s"', $key, $validStorage[$key]));
                 }
-                $this->storages[$type] = $service;
+                $this->storages[$key] = $service;
                 continue; // if explicitly set to a valid key, do not "magically" set below
             }
             // set a storage object to each key for the interface it represents
@@ -96,6 +101,12 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
         $this->responseTypes = $responseTypes;
         $this->grantTypes = $grantTypes;
         $this->accessTokenResponseType = $accessTokenResponseType;
+
+        //set the logger
+        $this->logger = $logger;
+        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
+            $this->logger = new \Symfony\Component\HttpKernel\Log\NullLogger();
+        }
     }
 
     public function getAccessController()
@@ -107,7 +118,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
             $tokenType = null;
             if ($this->config['token_type'] == 'bearer') {
                 $config = array_intersect_key($this->config, array_flip(explode(' ', 'token_param_name token_bearer_header_name')));
-                $tokenType = new OAuth2_TokenType_Bearer($config);
+                $tokenType = new OAuth2_TokenType_Bearer($config, $this->logger);
             } else if ($this->config['token_type'] == 'mac') {
                 $tokenType = new OAuth2_TokenType_MAC();
             } else {
@@ -117,7 +128,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
                 throw new LogicException("You must supply a storage object implementing OAuth2_Storage_AccessTokenInterface to use the access server");
             }
             $config = array_intersect_key($this->config, array('www_realm' => ''));
-            $this->accessController = new OAuth2_Controller_AccessController($tokenType, $this->storages['access_token'], $config);
+            $this->accessController = new OAuth2_Controller_AccessController($tokenType, $this->storages['access_token'], $config, null, $this->logger);
         }
         return $this->accessController;
     }
@@ -132,7 +143,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
                 $this->responseTypes = $this->getDefaultResponseTypes();
             }
             $config = array_intersect_key($this->config, array_flip(explode(' ', 'supported_scopes allow_implicit enforce_state')));
-            $this->authorizeController = new OAuth2_Controller_AuthorizeController($this->storages['client'], $this->responseTypes, $config);
+            $this->authorizeController = new OAuth2_Controller_AuthorizeController($this->storages['client'], $this->responseTypes, $config, null, $this->logger);
         }
         return $this->authorizeController;
     }
@@ -161,7 +172,7 @@ class OAuth2_Server implements OAuth2_Controller_AccessControllerInterface,
             if (0 == count($this->grantTypes)) {
                 $this->grantTypes = $this->getDefaultGrantTypes();
             }
-            $this->grantController = new OAuth2_Controller_GrantController($this->storages['client_credentials'], $this->accessTokenResponseType, $this->grantTypes);
+            $this->grantController = new OAuth2_Controller_GrantController($this->storages['client_credentials'], $this->accessTokenResponseType, $this->grantTypes, null, $this->logger);
         }
         return $this->grantController;
     }

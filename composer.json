@@ -13,7 +13,8 @@
     ],
     "homepage": "http://github.com/bshaffer/oauth2-server-php",
     "require":{
-        "php":">=5.2.0"
+        "php":">=5.2.0",
+        "symfony/http-kernel": ">=2.1,<2.3-dev"
     },
     "autoload": {
         "psr-0": { "OAuth2": "src/" }

@@ -10,8 +10,9 @@ class OAuth2_Controller_AuthorizeController implements OAuth2_Controller_Authori
     private $responseTypes;
     private $config;
     private $util;
+    protected $logger;
 
-    public function __construct(OAuth2_Storage_ClientInterface $clientStorage, array $responseTypes = array(), array $config = array(), $util = null)
+    public function __construct(OAuth2_Storage_ClientInterface $clientStorage, array $responseTypes = array(), array $config = array(), $util = null, \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {
         $this->clientStorage = $clientStorage;
         $this->responseTypes = $responseTypes;
@@ -25,6 +26,12 @@ class OAuth2_Controller_AuthorizeController implements OAuth2_Controller_Authori
             $util = new OAuth2_Util();
         }
         $this->util = $util;
+
+        //set the logger
+        $this->logger = $logger;
+        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
+            $this->logger = new \Symfony\Component\HttpKernel\Log\NullLogger();
+        }
     }
 
     public function handleAuthorizeRequest(OAuth2_RequestInterface $request, $is_authorized, $user_id = null)
@@ -61,18 +68,21 @@ class OAuth2_Controller_AuthorizeController implements OAuth2_Controller_Authori
         // Make sure a valid client id was supplied (we can not redirect because we were unable to verify the URI)
         if (!$client_id = $request->query("client_id")) {
             // We don't have a good URI to use
+            $this->logger->info('We don\'t have a good URI to use, no valid client id was supplied');
             $this->response = new OAuth2_Response_Error(400, 'invalid_client', "No client id supplied");
             return false;
         }
 
         // Get client details
         if (!$clientData = $this->clientStorage->getClientDetails($client_id)) {
+            $this->logger->info('The client id supplied is invalid');
             $this->response = new OAuth2_Response_Error(400, 'invalid_client', 'The client id supplied is invalid');
             return false;
         }
 
         $clientData += array('redirect_uri' => null); // this should be set.  We should create ClientData interface
         if ($clientData === false) {
+            $this->logger->info('Client id does not exist');
             $this->response = new OAuth2_Response_Error(400, 'invalid_client', "Client id does not exist");
             return false;
         }
@@ -82,6 +92,7 @@ class OAuth2_Controller_AuthorizeController implements OAuth2_Controller_Authori
         // @see http://tools.ietf.org/html/draft-ietf-oauth-v2-20#section-4.1.2.1
         // @see http://tools.ietf.org/html/draft-ietf-oauth-v2-20#section-4.2.2.1
         if (!($redirect_uri = $request->query('redirect_uri')) && !($redirect_uri = $clientData['redirect_uri'])) {
+            $this->logger->info('No redirect URI was supplied or stored');
             $this->response = new OAuth2_Response_Error(400, 'invalid_uri', 'No redirect URI was supplied or stored');
             return false;
         }
@@ -89,12 +100,14 @@ class OAuth2_Controller_AuthorizeController implements OAuth2_Controller_Authori
         $parts = parse_url($redirect_uri);
 
         if (isset($parts['fragment']) && $parts['fragment']) {
+            $this->logger->info('The redirect URI must not contain a fragment');
             $this->response = new OAuth2_Response_Error(400, 'invalid_uri', 'The redirect URI must not contain a fragment');
             return false;
         }
 
         // Only need to validate if redirect_uri provided on input and clientData.
         if ($clientData["redirect_uri"] && $redirect_uri && !$this->util->validateRedirectUri($redirect_uri, $clientData["redirect_uri"])) {
+            $this->logger->info('The redirect URI provided is missing or does not match');
             $this->response = new OAuth2_Response_Error(400, 'redirect_uri_mismatch', 'The redirect URI provided is missing or does not match');
             return false;
         }
@@ -107,39 +120,47 @@ class OAuth2_Controller_AuthorizeController implements OAuth2_Controller_Authori
 
         // type and client_id are required
         if (!$response_type || !in_array($response_type, array(self::RESPONSE_TYPE_AUTHORIZATION_CODE, self::RESPONSE_TYPE_ACCESS_TOKEN))) {
+            $this->logger->info('Invalid or missing response type');
             $this->response = new OAuth2_Response_Redirect($redirect_uri, 302, 'invalid_request', 'Invalid or missing response type', $state);
             return false;
         }
         if ($response_type == self::RESPONSE_TYPE_AUTHORIZATION_CODE) {
             if (!isset($this->responseTypes['code'])) {
+                $this->logger->info('Authorization code grant type not supported');
                 $this->response = new OAuth2_Response_Redirect($redirect_uri, 302, 'unsupported_response_type', 'authorization code grant type not supported', $state);
                 return false;
             }
             if ($this->responseTypes['code']->enforceRedirect() && !$redirect_uri) {
+                $this->logger->info('The redirect URI is mandatory and was not supplied.');
                 $this->response = new OAuth2_Response_Error(400, 'redirect_uri_mismatch', 'The redirect URI is mandatory and was not supplied.');
                 return false;
             }
         }
 
         if ($response_type == self::RESPONSE_TYPE_ACCESS_TOKEN && $this->config['allow_implicit'] === false) {
+            $this->logger->info('Implicit grant type not supported');
             $this->response = new OAuth2_Response_Redirect($redirect_uri, 302, 'unsupported_response_type', 'implicit grant type not supported', $state);
             return false;
         }
 
         // Validate that the requested scope is supported
         if ($scope && !$this->util->checkScope($scope, $this->config['supported_scopes'])) {
+            $this->logger->info('An unsupported scope was requested');
             $this->response = new OAuth2_Response_Redirect($redirect_uri, 302, 'invalid_scope', 'An unsupported scope was requested', $state);
             return false;
         }
 
         // Validate state parameter exists (if configured to enforce this)
         if ($this->config['enforce_state'] && !$state) {
+            $this->logger->info('The state parameter is required');
             $this->response = new OAuth2_Response_Redirect($redirect_uri, 302, 'invalid_request', 'The state parameter is required');
             return false;
         }
 
         // Return retrieved client details together with input
-        return ((array)$request->getAllQueryParameters() + $clientData + array('state' => null));
+        $value = ((array)$request->getAllQueryParameters() + $clientData + array('state' => null));
+        $this->logger->debug('Return retrieved client details together with input', $value);
+        return $value;
     }
 
     public function getResponse()

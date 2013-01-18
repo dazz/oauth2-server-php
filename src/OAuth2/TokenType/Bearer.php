@@ -7,13 +7,20 @@ class OAuth2_TokenType_Bearer implements OAuth2_TokenTypeInterface, OAuth2_Respo
 {
     private $response;
     private $config;
+    protected $logger;
 
-    public function __construct(array $config = array())
+    public function __construct(array $config = array(), \Symfony\Component\HttpKernel\Log\LoggerInterface $logger = null)
     {
         $this->config = array_merge(array(
             'token_param_name'         => 'access_token',
             'token_bearer_header_name' => 'Bearer',
         ), $config);
+
+        //set the logger
+        $this->logger = $logger;
+        if(!$this->logger instanceof \Symfony\Component\HttpKernel\Log\LoggerInterface) {
+            $this->logger = new \Symfony\Component\HttpKernel\Log\NullLogger();
+        }
     }
 
     public function getTokenType()
@@ -45,7 +52,7 @@ class OAuth2_TokenType_Bearer implements OAuth2_TokenTypeInterface, OAuth2_Respo
      */
     public function getAccessTokenParameter(OAuth2_RequestInterface $request)
     {
-        $headers = $request->server('AUTHORIZATION');
+        $headers = $request->server('HTTP_AUTHORIZATION');
 
         // Check that exactly one method was used
         $methodsUsed = !empty($headers) + !is_null($request->query($this->config['token_param_name'])) + !is_null($request->request($this->config['token_param_name']));
