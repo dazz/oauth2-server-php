@@ -66,7 +66,7 @@ class OAuth2_Controller_GrantController implements OAuth2_Controller_GrantContro
         }
         if (!isset($this->grantTypes[$grantType])) {
             /* TODO: If this is an OAuth2 supported grant type that we have chosen not to implement, throw a 501 Not Implemented instead */
-            $this->logger->info('Grant type "%s" not supported', $grantType);
+            $this->logger->info('Grant type "%s" not supported', array($grantType));
             $this->response = new OAuth2_Response_Error(400, 'unsupported_grant_type', sprintf('Grant type "%s" not supported', $grantType));
             return null;
         }
