@@ -5,3 +5,6 @@ OAuth2_Autoloader::register();
 
 // register test classes
 OAuth2_Autoloader::register(dirname(__FILE__).'/lib');
+
+// register vendors
+require_once __DIR__.'/../../../../vendor/autoload.php';
