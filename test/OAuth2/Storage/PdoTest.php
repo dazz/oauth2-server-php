@@ -146,13 +146,19 @@ class OAuth2_Storage_PdoTest extends PHPUnit_Framework_TestCase
 
     public function provideStorage()
     {
-        $mysql = OAuth2_Storage_Bootstrap::getInstance()->getMysqlPdo();
+        $provider = array();
+
+        try {
+            $mysql = OAuth2_Storage_Bootstrap::getInstance()->getMysqlPdo();
+            $provider[] = array($mysql);
+        } catch (PDOException $e) {
+            // ignore it - because maybe there is no server!
+        }
+
         $sqlite = OAuth2_Storage_Bootstrap::getInstance()->getSqlitePdo();
+        $provider[] = array($sqlite);
 
         // will add multiple storage types later
-        return array(
-            array($sqlite),
-            array($mysql),
-        );
+        return $provider;
     }
 }
