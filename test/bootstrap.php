@@ -7,4 +7,4 @@ OAuth2_Autoloader::register();
 OAuth2_Autoloader::register(dirname(__FILE__).'/lib');
 
 // register vendors
-require_once __DIR__.'/../../../../vendor/autoload.php';
+require_once dirname(dirname(__FILE__)) . '/vendor/autoload.php';
